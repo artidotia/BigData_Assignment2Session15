@@ -1,0 +1,52 @@
+***********************************************************************************************
+Problem Statement:
+Dataset of Olympics
+***********************************************************************************************
+
+Get the dataset and store in HDFS
+hadoop fs -mkdir olympic_dataset
+hadoop fs -put /home/acadgild/Assignment-session6/olympix_data.csv olympic_dataset
+
+hive> create table if not exists olympic (athlete String,age int,country String,year int,closingdate String,sport string,gold int,silver int,bronze int,total int) row format delimited fields terminated by '\t' stored as TEXTFILE;
+
+hive>load data inpath '/user/acadgild/olympic_dataset' into table olympic;
+
+-----------------------------------------------------------------------------------------------
+(A) Write a Hive program to find the number of medals won by each country in swimming.
+
+hive> select country, sum(total) from olympic where sport='Swimming' group by country;
+-----------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------
+(B) Write a Hive program to find the number of medals that India won year wise.
+
+hive> create table partitioned_india(athlete String,age int,year int,closingdate String,sport string,gold int,silver int,bronze int,total int) PARTITIONED BY (country string) stored as SEQUENCEFILE;
+
+hive> describe partitioned_india;
+
+hive> INSERT OVERWRITE TABLE partitioned_india  PARTITION (country='India') 
+SELECT athlete, age, year, closing, sport, gold, silver, bronze, total FROM olympic where country='India';
+
+hive> select year, sum(total) from partitioned_india group by year;
+-----------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------
+(C) Write a Hive Program to find the total number of medals each country won.
+
+hive> create table partitioned_country(athlete String,age int,year int,closingdate String,sport string,gold int,silver int,bronze int,total int) PARTITIONED BY (country string) stored as SEQUENCEFILE;
+
+hive> describe partitioned_country;
+
+hive> INSERT INTO TABLE partitioned_country  PARTITION (country) SELECT athlete, age, year, closing, sport, gold, silver, bronze, total, country FROM olympic;
+
+hive> select country, year, sum(total) from partitioned_country group by country, year;
+-----------------------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------------------
+(D) Write a Hive program to find the number of gold medals each country won.
+
+Using the same partition created above (C).
+
+hive> select country, sum(gold) from partitioned_country group by country;
+-----------------------------------------------------------------------------------------------
+
